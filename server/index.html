@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jitsi Meet Frame Capture</title>
+    <script src="https://meet.jit.si/external_api.js"></script>
+</head>
+<body>
+    <canvas id="jitsiCanvas" style="display: none;"></canvas>
+    <script>
+        // Initialize Jitsi Meet API
+        const domain = "5275-197-232-27-164.ngrok-free.app"; // Remove https:// from the domain
+        const options = {
+            roomName: "MaterialTransitsPushObviously",
+            width: 800,
+            height: 600,
+            parentNode: document.querySelector('body'),
+            interfaceConfigOverwrite: { filmStripOnly: true },
+            configOverwrite: { disableDeepLinking: true }
+        };
+
+        console.log('Initializing Jitsi Meet API with options:', options);
+        const api = new JitsiMeetExternalAPI(domain, options);
+
+        // Event listener for video conference joined
+        api.addEventListener('videoConferenceJoined', () => {
+            console.log('Joined the meeting');
+            console.log('Listener called');
+
+            // Create a canvas element
+            const canvas = document.getElementById('jitsiCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Capture frames periodically
+            setInterval(() => {
+                try {
+                    // Get the video element from the iframe
+                    const iframe = document.querySelector('iframe');
+                    if (!iframe) {
+                        console.error('Iframe not found');
+                        return;
+                    }
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const videoElement = iframeDoc.querySelector('video');
+
+                    if (videoElement) {
+                        canvas.width = videoElement.videoWidth;
+                        canvas.height = videoElement.videoHeight;
+
+                        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                        const frame = canvas.toDataURL('image/png');
+                        console.log('Captured frame:', frame);
+                        // You can send the frame to a server or process it further
+                    } else {
+                        console.error('Video element not found');
+                    }
+                } catch (error) {
+                    console.error('Error capturing frame:', error);
+                }
+            }, 1000); // Capture a frame every second
+        });
+
+        // Additional event listeners for debugging
+        api.addEventListener('readyToClose', () => {
+            console.log('Conference is ready to close');
+        });
+
+        api.addEventListener('participantJoined', (participant) => {
+            console.log('Participant joined:', participant);
+        });
+
+        api.addEventListener('participantLeft', (participant) => {
+            console.log('Participant left:', participant);
+        });
+
+        api.addEventListener('videoConferenceLeft', () => {
+            console.log('Left the meeting');
+        });
+
+        console.log('Jitsi Meet API initialized');
+    </script>
+</body>
+</html>
